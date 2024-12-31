@@ -1,0 +1,188 @@
+<!DOCTYPE html>
+<html lang="en">
+  <head>
+    <meta name="viewport" content="width=device-width, initial-scale=1.0, maximum-scale=1.0, user-scalable=0">
+    <link href="https://fonts.googleapis.com/css2?family=Orbitron&display=swap" rel="stylesheet">
+    <style>
+      body {
+        padding: 0;
+        margin: 0;
+        display: flex;
+        flex-direction: column;
+        align-items: center;
+        justify-content: center;
+        height: 100vh;
+        background-color: #000;
+        font-family: 'Orbitron', Arial, sans-serif;
+        overflow: hidden;
+      }
+
+      #countdown {
+        position: absolute;
+        bottom: 18%; /* Adjust the distance from the bottom */
+        text-align: center;
+        font-size: 1.8em;
+        color: #F3E600;
+        text-shadow: 2px 2px 4px rgba(0, 0, 0, 0.7);
+        z-index: 10;
+      }
+
+      .range {
+        position: absolute;
+        bottom: 12%; /* Adjust this to position the bar higher or lower */
+        background-color: #333;
+        width: 80%;
+        height: 30px;
+        transform: skew(30deg);
+        font-family: 'Orbitron', monospace;
+        z-index: 5;
+        display: flex;
+        justify-content: center;
+        align-items: center;
+      }
+
+      #progress-bar {
+        width: 0%;
+        height: 100%;
+        background-color: #F3E600;
+        transition: width 1s linear;
+        position: relative;
+        z-index: 1;
+      }
+
+      #progress-percentage {
+        position: absolute;
+        left: 50%;
+        top: 50%;
+        transform: translate(-50%, -50%) skewX(-30deg);
+        font-size: 0.9em;
+        font-weight: bold;
+        color: #000;
+        z-index: 2;
+        pointer-events: none;
+      }
+
+      #before-text {
+        position: absolute;
+        bottom: 8%;
+        text-align: center;
+        font-size: 1.2em;
+        color: #F3E600;
+        text-shadow: 1px 1px 2px rgba(0, 0, 0, 0.7);
+        z-index: 10;
+      }
+
+      audio {
+        display: none;
+      }
+    </style>
+    <script src="p5.min.js"></script>
+    <script src="addons/p5.dom.min.js"></script>
+    <script src="addons/p5.sound.min.js"></script>
+    <script src="sketch.js"></script>
+    <script src="new_year_fireworks.js"></script>
+  </head>
+  <body>
+    <div id="countdown">00:00:00</div>
+    <div class="range" id="progress-container">
+      <div id="progress-bar">
+        <div id="progress-percentage">0%</div>
+      </div>
+    </div>
+    <div id="before-text">before 2024 ends</div>
+    <audio id="happy-audio" src="sounds/Manny Pacquiao Happy New Year - short version-[AudioTrimmer.com].mp3"></audio>
+
+    <script>
+      const startOfYear = new Date('January 1, 2024 00:00:00').getTime();
+      const endOfYear = new Date('December 31, 2024 23:59:59').getTime();
+      const totalYearDuration = endOfYear - startOfYear;
+
+      let isSpamClicking = true;  // Flag to control the spam click behavior
+      let spamInterval;
+
+      function updateCountdown() {
+        const now = new Date().getTime();
+        const elapsed = now - startOfYear;
+        const remaining = endOfYear - now;
+
+        // Calculate percentage, but avoid reaching 100%
+        const percentagePassed = Math.min((elapsed / totalYearDuration) * 100, 99.9);
+
+        // Update progress bar and percentage text
+        const progressBar = document.getElementById('progress-bar');
+        const progressPercentage = document.getElementById('progress-percentage');
+
+        progressBar.style.width = `${percentagePassed.toFixed(2)}%`;
+        progressPercentage.innerText = `${percentagePassed.toFixed(2)}%`;
+
+        // Calculate remaining time
+        const remainingHours = Math.floor((remaining % (1000 * 60 * 60 * 24)) / (1000 * 60 * 60));
+        const remainingMinutes = Math.floor((remaining % (1000 * 60 * 60)) / (1000 * 60));
+        const remainingSeconds = Math.floor((remaining % (1000 * 60)) / 1000);
+
+        // Update countdown timer dynamically based on remaining time
+        let countdownText = '';
+
+        // Only show hours if there are more than 0 hours
+        if (remainingHours > 0) {
+          countdownText = `${remainingHours}:${remainingMinutes.toString().padStart(2, '0')}:${remainingSeconds.toString().padStart(2, '0')}`;
+        } else {
+          countdownText = `${remainingMinutes}:${remainingSeconds.toString().padStart(2, '0')}`;
+        }
+
+        document.getElementById('countdown').innerHTML = countdownText;
+
+        // Trigger New Year actions
+        if (remaining <= 0) {
+          document.getElementById('countdown').style.display = 'none';
+          document.getElementById('before-text').style.display = 'none';
+          document.getElementById('progress-container').style.display = 'none';
+          playHappyNewYearAudio();
+          stopSpamClicking(); // Stop spam click once the countdown ends
+        }
+      }
+
+      function playHappyNewYearAudio() {
+        const audio = document.getElementById('happy-audio');
+        audio.play();
+
+        // Stop spam clicking once the audio is finished playing
+        audio.onended = function () {
+          stopSpamClicking();
+        };
+      }
+
+      function triggerRandomClickForFireworks() {
+        // Trigger random click events for fireworks
+        if (isSpamClicking) {
+          const randomX = Math.random() * window.innerWidth;
+          const randomY = Math.random() * window.innerHeight;
+
+          // Simulate click at a random position
+          const event = new MouseEvent('click', {
+            clientX: randomX,
+            clientY: randomY,
+          });
+          document.dispatchEvent(event);
+        }
+      }
+
+      function startSpamClicking() {
+        // Start an interval to trigger random clicks at high frequency
+        spamInterval = setInterval(triggerRandomClickForFireworks, 50); // Click every 50ms
+      }
+
+      function stopSpamClicking() {
+        // Stop the spam click by clearing the interval
+        clearInterval(spamInterval);
+        isSpamClicking = false;
+      }
+
+      setInterval(updateCountdown, 1000);
+      updateCountdown();
+
+      // Start spam clicking when the countdown starts
+      startSpamClicking();
+    </script>
+  </body>
+</html>
